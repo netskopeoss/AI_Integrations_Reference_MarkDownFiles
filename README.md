@@ -251,7 +251,7 @@ There is no direct RESTful API workflow for this today — device information is
 - **Base URL:** `https://<customer-tenant>.goskope.com/api/v2`
 - **API Docs (Swagger):** `https://<customer-tenant>.goskope.com/apidocs`
 - **SCIM Endpoint:** `/api/v2/scim`
-- **Events/Incidents:** `/api/v2/events`, `/api/v2/incidents`
+- **Events/Incidents:** `/api/v2/events/dataexport`, `/api/v2/incidents`
 - **Policy/Services:** `/api/v2/policy`, `/api/v2/services`
 
 ---
