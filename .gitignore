@@ -1,0 +1,16 @@
+# Google Drive / Docs sync shortcuts
+*.gdoc
+*.gsheet
+*.gslides
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Scratch/temp files
+*.tmp
+temp.md
