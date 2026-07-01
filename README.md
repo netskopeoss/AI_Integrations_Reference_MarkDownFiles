@@ -247,7 +247,7 @@ There is no direct RESTful API workflow for this today — device information is
 ---
 
 ## API Reference Quick Links
-
+- **Using REST API v2** [Using the REST API v2 dataexport Iterator Endpoints](https://docs.netskope.com/en/using-the-rest-api-v2-dataexport-iterator-endpoints)
 - **Base URL:** `https://<customer-tenant>.goskope.com/api/v2`
 - **API Docs (Swagger):** `https://<customer-tenant>.goskope.com/apidocs`
 - **SCIM Endpoint:** `/api/v2/scim`
