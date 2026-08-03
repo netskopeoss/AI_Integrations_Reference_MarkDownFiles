@@ -6,10 +6,11 @@ Programmatically manage device tags and device classifications within your Netsk
 
 ## Overview
 
-The Netskope Device Classification API enables partners and administrators to:
-- View existing device tags and classifications
-- Create new tags and classification rules
-- Look up devices and apply tags to them
+Use these endpoints to:
+- View existing device tags and classification rules
+- Create new device tags and classification tags/rules
+- Look up devices and retrieve their current tags
+- Apply tags to one or more devices in bulk
 - Manage tag lifecycle (update, remove) over time
 
 **Prerequisites:**
@@ -18,8 +19,6 @@ The Netskope Device Classification API enables partners and administrators to:
   - `Access Control > NS Client` — set both **Device Classification** and **Devices** to **Manage**
   - `CASB > CCI` — set to **View**
 - **User-Agent header:** Include a user-agent string formatted as `<Vendor-Product-Version>` in all API requests.
-
-![Functional area permissions required for Device Classification and Devices](images/device-tags/01-functional-area-permissions.png)
 
 ---
 
@@ -64,34 +63,6 @@ These are two related but distinct systems — most integrations use both togeth
 
 ---
 
-## Available Endpoints
-
-**Tag Management (Device Classification)**
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v2/deviceclassification/tags` | List all device tags |
-| POST | `/api/v2/deviceclassification/tags` | Create a new device tag |
-| GET | `/api/v2/deviceclassification/tags/{id}` | Retrieve a specific tag by ID |
-| PUT | `/api/v2/deviceclassification/tags/{id}` | Update an entire tag |
-| PATCH | `/api/v2/deviceclassification/tags/{id}` | Partially update a tag |
-| DELETE | `/api/v2/deviceclassification/tags/{id}` | Delete a device tag |
-| GET | `/api/v2/deviceclassification/options` | Get available classification options |
-| GET | `/api/v2/deviceclassification/rules` | List classification rules |
-| POST | `/api/v2/deviceclassification/rules` | Create a classification rule |
-
-**Device Tag Application**
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v2/devices/device/tags` | Create/register a device tag |
-| POST | `/api/v2/devices/device/tags/bulkreplace` | Apply tags to one or more devices |
-| POST | `/api/v2/devices/device/tags/gettags` | Get tags for a specific device |
-| PATCH | `/api/v2/devices/device/tags/{id}` | Update device tag assignment |
-| DELETE | `/api/v2/devices/device/tags/{id}` | Remove a tag from a device |
-
----
-
 ## 1. View Existing Device Tags
 
 Retrieve all device classification tags in your Netskope environment.
@@ -119,7 +90,7 @@ curl -X GET "https://<tenant>.goskope.com/api/v2/deviceclassification/tags" \
 ]
 ```
 
-![Response listing existing device tags](images/device-tags/02-view-device-tags-response.png)
+**Use case:** Check what classification tags already exist (and which policies reference them) before creating new ones.
 
 ---
 
@@ -150,9 +121,7 @@ curl -X POST "https://<tenant>.goskope.com/api/v2/deviceclassification/tags" \
 }
 ```
 
-**Note:** A newly created classification tag has no rule or OS association yet — it won't apply to any devices until you create a classification rule (workflow 3).
-
-![Newly created tag missing a rule/OS association](images/device-tags/03-tag-missing-rule-os.png)
+**Important:** A newly created classification tag has no rule or OS association yet — it returns success but won't apply to any devices until you create a classification rule (workflow 3) that references it by name via `label`.
 
 ---
 
@@ -223,7 +192,15 @@ curl -X POST "https://<tenant>.goskope.com/api/v2/deviceclassification/rules" \
   ]'
 ```
 
-**Note:** The `tag_id` in the second request refers to a **device tag** ID (not a classification tag ID) — use `/api/v2/devices/device/tags/gettags` to look it up (workflow 5).
+**Response (both requests):**
+```json
+{
+  "status": true,
+  "data": [42]
+}
+```
+
+**Note:** The `tag_id` in the second request refers to a **device tag** ID (not a classification tag ID) — use `/api/v2/devices/device/tags/gettags` to look it up (workflow 6).
 
 **Important:**
 - Request body must be an array of rule objects
@@ -232,8 +209,6 @@ curl -X POST "https://<tenant>.goskope.com/api/v2/deviceclassification/rules" \
 - Conditions support multiple criteria types: `min_os_version_check`, `device_tag_check`, `av_check`, `domain_check`, `file_check`, etc.
 - For OS edition criteria, use `min_os_version_check` with edition values like `"Windows All"`, `"Windows 10"`, `"Windows 11"`
 - HTTP 201 indicates successful rule creation
-
-![Rule creation referencing a device tag ID](images/device-tags/04-device-tag-gettags-id.png)
 
 ---
 
@@ -281,15 +256,13 @@ curl -X GET "https://<tenant>.goskope.com/api/v2/events/datasearch/clientstatus?
 }
 ```
 
-![Device search results including nsdeviceuid](images/device-tags/05-find-devices-clientstatus.png)
+**Use case:** Resolve a hostname or user to the `nsdeviceuid` required by every device-tagging call below.
 
 ---
 
-## 5. Create or Find a Device Tag
+## 5. Create a Device Tag
 
-If the tag doesn't exist yet, create it. If it already exists, look it up by querying any device's current tags — the response includes every tag defined in the tenant, with IDs and names.
-
-### Create a Device Tag
+Register a new device tag. If the tag might already exist, check first with workflow 6 to avoid creating a duplicate.
 
 **Endpoint:** `POST /api/v2/devices/device/tags`
 
@@ -316,7 +289,13 @@ curl -X POST "https://<tenant>.goskope.com/api/v2/devices/device/tags" \
 }
 ```
 
-### Find Existing Device Tags
+**Use case:** Pre-create the set of tags your integration will need (e.g., `low risk`, `medium risk`, `compromised`) before your response workflows run.
+
+---
+
+## 6. Find Existing Device Tags
+
+Look up every device tag defined in the tenant, with IDs and names. There's no direct "list all tags" endpoint — query any device's tags and the response includes the full tag catalog.
 
 **Endpoint:** `POST /api/v2/devices/device/tags/gettags`
 
@@ -339,11 +318,13 @@ curl -X POST "https://<tenant>.goskope.com/api/v2/devices/device/tags/gettags" \
 }
 ```
 
+**Use case:** Resolve a tag name to its ID before calling bulk replace (workflow 7), or before referencing it in a classification rule's `device_tag_check` (workflow 3).
+
 ---
 
-## 6. Apply Tags to Devices
+## 7. Apply Tags to Devices
 
-Apply one or more tags to one or more devices with the bulk replace endpoint. **This replaces all tags** on the specified devices with the tags provided.
+Apply one or more tags to one or more devices with the bulk replace endpoint. **This replaces all tags** on the specified devices with the tags provided — it is not additive.
 
 **Endpoint:** `POST /api/v2/devices/device/tags/bulkreplace`
 
@@ -382,45 +363,31 @@ curl -X POST "https://<tenant>.goskope.com/api/v2/devices/device/tags/bulkreplac
 }
 ```
 
-![Bulk replace applying a tag to a device](images/device-tags/06-apply-tags-bulkreplace.png)
+**Use case:** In response to an XDR/EDR finding, write a risk tag to the affected device(s). A pre-configured classification rule (workflow 3) then promotes the tag into a classification that real-time policy can act on.
 
 ---
 
-## End-to-End Test Walkthrough
+## Verifying Enforcement
 
-This walkthrough traces a full workflow: create a classification tag, find a target device, create a rule, and confirm enforcement — using a real Windows 11 device and a "medium risk" tag.
+The API calls above create and apply tags/classifications, but two pieces of setup happen outside the API, in the Netskope UI, and are required before any policy action actually fires:
 
-**Step 1 — Create the classification tag**
-`POST /api/v2/deviceclassification/tags` — name: `medium risk`, description: `devices that are at medium risk` → HTTP 201, tag ID `16224`
+1. **Classification rule must exist and reference the tag** (workflow 3) — without it, a device tag alone does not become a classification.
+2. **A Real-Time Policy must be configured to match on the resulting classification** — go to **Policies > Real-time Protection**, create or edit a policy, and add a condition that matches your classification/tag, then choose an enforcement action (Alert, Block, etc.). Netskope does not expose an API to create or modify these policies; they must be pre-configured by the tenant admin.
 
-**Step 2 — Find the target device**
-`GET /api/v2/events/datasearch/clientstatus` (last 24 hours) → device found: `Surface`, ID `m0iIawJYwjxM1Zb9YLIW_AB2E7066-747D-8728-71F9-6163532C2BD0`, user `alliances@netskope.com`, OS Windows 11
+To confirm a tag or classification took effect without relying on the admin console, poll the same endpoints you used to set it:
+- Re-run workflow 6 (`gettags`) for the device to confirm the tag is present
+- Re-run workflow 1 (`deviceclassification/tags`) to confirm the classification's `policyNames` field is populated, which indicates a policy references it
 
-**Step 3 — Create the classification rule**
-`POST /api/v2/deviceclassification/rules` — name: `medium risk rule - Windows`, label: `medium risk`, os: `windows`, condition: `device_tag_check` with `tag_id: 16224` → HTTP 201, rule active and visible in the Netskope admin console
-
-**Step 4 — Verify in the Netskope client**
-Once the rule is created, the "medium risk" classification appears in the user's Netskope client.
-
-![Medium risk classification visible in the Netskope client](images/device-tags/07-netskope-client-classification.png)
-
-A Real-Time Policy must exist that matches on the classification/tag before any policy action is enforced:
-
-![Real-time policy configured to match the classification](images/device-tags/08-realtime-policy-match.png)
-
-A basic Alert action was used for this test policy:
-
-![Policy configured with an Alert action for testing](images/device-tags/09-policy-alert-action.png)
-
-**Test Results Summary**
-
-| Component | Value |
-|-----------|-------|
-| Tag Name | medium risk |
-| Tag ID | 16224 |
-| Rule Name | medium risk rule - Windows |
-| Rule OS Target | Windows |
-| Device | Surface (`m0iIawJYwjxM1Zb9YLIW_AB2E7066-747D-8728-71F9-6163532C2BD0`) |
+**Example end-to-end sequence** (create a "medium risk" tag, apply it, and confirm):
+```
+1. POST /api/v2/deviceclassification/tags   → create "medium risk" classification tag (workflow 2)
+2. POST /api/v2/deviceclassification/rules  → create rule linking device_tag_check to the tag (workflow 3)
+3. GET  /api/v2/events/datasearch/clientstatus → resolve target device's nsdeviceuid (workflow 4)
+4. POST /api/v2/devices/device/tags          → create the underlying device tag if needed (workflow 5)
+5. POST /api/v2/devices/device/tags/bulkreplace → apply the tag to the device (workflow 7)
+6. POST /api/v2/devices/device/tags/gettags  → confirm the tag is now present on the device (workflow 6)
+```
+Enforcement then depends on a Real-Time Policy (configured in the UI) matching on that classification.
 
 ---
 
@@ -435,14 +402,36 @@ A basic Alert action was used for this test policy:
 
 ---
 
+## Integration Tips
+
+### Error Handling
+- Check for HTTP 429 (rate limit exceeded) and back off exponentially
+- Validate API tokens and functional area permissions before bulk operations
+- Confirm a classification rule exists before assuming a device tag will affect policy
+
+### Idempotency
+- Query existing tags (workflow 6) before creating new ones to avoid duplicates
+- Remember `bulkreplace` overwrites all tags on a device — fetch current tags first if you need to preserve any
+
+### Batching & Timing
+- Split device lists into batches of 100 before calling `bulkreplace`
+- Classification rule changes and tag assignments should be verified by polling, since there is no webhook/event for tag application
+
+### Testing
+- Start with a single test device and tag before running bulk operations
+- Verify the classification rule was created correctly (workflow 1) before relying on it in production
+- Use a non-production tenant if available
+
+---
+
 ## Common Patterns
 
 ### Real-Time Risk Tagging
 ```
 1. Third-party tool detects elevated device risk
-2. Look up device tag ID (workflow 5) or create one if it doesn't exist
+2. Look up device tag ID (workflow 6) or create one if it doesn't exist (workflow 5)
 3. Find the device's nsdeviceuid (workflow 4)
-4. Apply the tag via bulkreplace (workflow 6)
+4. Apply the tag via bulkreplace (workflow 7)
 5. Pre-configured classification rule promotes the tag into a classification
 6. Real-time policy matches on the classification and enforces (e.g., alert, block)
 ```
@@ -451,9 +440,28 @@ A basic Alert action was used for this test policy:
 ```
 1. Query devices in scope (workflow 4)
 2. Split device list into batches of 100 (platform limit)
-3. For each batch, call bulkreplace (workflow 6)
+3. For each batch, call bulkreplace (workflow 7)
 4. Monitor affected_device_tags count in each response
 ```
+
+---
+
+## Troubleshooting
+
+**Problem:** Tag applied successfully but no policy action occurs
+- **Solution:** Confirm a classification rule exists that references the tag (workflow 3), and that a Real-Time Policy in the Netskope UI matches on that classification. Tags alone don't trigger enforcement.
+
+**Problem:** `bulkreplace` removed tags I expected to keep
+- **Solution:** This endpoint replaces the full tag set on a device. Fetch current tags first (workflow 6) and include them in the `tags` array alongside the new tag.
+
+**Problem:** Classification rule creation succeeds but the classification never applies
+- **Solution:** Verify both required rules were created — one for OS criteria and one for the `device_tag_check` criteria (workflow 3 requires both).
+
+**Problem:** "Maximum tags per device exceeded" or unexpected tags dropped
+- **Solution:** Netskope allows a maximum of 5 tags per device. For a replace action, only the first 5 sorted tags are applied — reduce the tag count or split by tag priority.
+
+**Problem:** Comma-separated device UID request rejected
+- **Solution:** Unlike tags and user keys, `nsdeviceuid` does not support comma-separated batching in a single object — submit one device object per entry in the `devices` array instead.
 
 ---
 
@@ -461,13 +469,13 @@ A basic Alert action was used for this test policy:
 
 | Workflow | Endpoint | Method | Purpose |
 |----------|----------|--------|---------|
-| 1 | `/api/v2/deviceclassification/tags` | GET | View existing device tags |
+| 1 | `/api/v2/deviceclassification/tags` | GET | View existing classification tags |
 | 2 | `/api/v2/deviceclassification/tags` | POST | Create a classification tag |
 | 3 | `/api/v2/deviceclassification/rules` | POST | Create a classification rule |
 | 4 | `/api/v2/events/datasearch/clientstatus` | GET | Find devices / get nsdeviceuid |
-| 5a | `/api/v2/devices/device/tags` | POST | Create a device tag |
-| 5b | `/api/v2/devices/device/tags/gettags` | POST | Find existing device tags |
-| 6 | `/api/v2/devices/device/tags/bulkreplace` | POST | Apply tags to devices |
+| 5 | `/api/v2/devices/device/tags` | POST | Create a device tag |
+| 6 | `/api/v2/devices/device/tags/gettags` | POST | Find existing device tags |
+| 7 | `/api/v2/devices/device/tags/bulkreplace` | POST | Apply tags to devices |
 
 **Note:** The Device Classification API is currently in **beta** — contact your Netskope account team for access.
 
