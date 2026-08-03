@@ -167,6 +167,25 @@ Configure and manage Zero Trust Network Access applications.
 
 ---
 
+### 🏷️ **Device Tags for Classification**
+Programmatically manage device tags and classification rules to drive real-time policy off device risk.
+
+**Use this if you're building:**
+- Real-time device risk tagging from a third-party assessment tool
+- Device classification rules tied to custom tags
+- XDR/EDR-driven device isolation or restricted access
+
+[Read Device Tags for Classification Guide →](Device-Tags-for-Classification.md)
+
+**Key workflows:**
+- View, create, and manage device tags and classification rules
+- Look up devices by status query
+- Apply tags to devices in bulk
+
+**Note:** This API is currently in **beta** — contact your Netskope account team for access.
+
+---
+
 ### 📡 **NAC Device Integration**
 Push Network Access Control (NAC) device posture information into Netskope via Cloud Exchange.
 
@@ -280,7 +299,7 @@ Each guide is self-contained and includes:
 
 ---
 
-**Last updated:** July 2026  
+**Last updated:** August 2026  
 **API Version:** v2 (RESTful), v2 (SCIM)
 
 ## License
