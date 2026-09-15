@@ -196,25 +196,6 @@ There is no direct RESTful API workflow for this today — device information is
 
 ---
 
-### ☁️ **AWS TGW → Netskope IPsec Automation**
-Automate IPsec tunnel failover between an AWS Transit Gateway and Netskope Security Cloud.
-
-**Use this if you're building:**
-- High-availability Netskope tunnel connectivity from AWS
-- Automated failover/failback between two Netskope POPs
-- Infrastructure-as-code deployment of tunnel resiliency
-
-[Read AWS TGW → Netskope IPsec Automation Guide →](AWS-TGW-IPsec-Automation.md)
-
-**Key workflows:**
-- Deploy the CloudFormation failover management stack
-- Tag and configure TGW attachments/route tables
-- Verify, smoke-test, and troubleshoot failover
-
-**Source:** [netskopeoss/AWS-TGW-IPsec-Automation](https://github.com/netskopeoss/AWS-TGW-IPsec-Automation)
-
----
-
 ## Best Practices
 
 ### Audit Trail
@@ -318,7 +299,7 @@ Each guide is self-contained and includes:
 
 ---
 
-**Last updated:** September 2026  
+**Last updated:** August 2026  
 **API Version:** v2 (RESTful), v2 (SCIM)
 
 ## License
