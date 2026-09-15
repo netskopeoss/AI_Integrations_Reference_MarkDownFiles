@@ -186,6 +186,23 @@ Programmatically manage device tags and classification rules to drive real-time 
 
 ---
 
+### 🌐 **Creating Tunnels to Netskope using REST APIs**
+Automate IPsec/GRE tunnel creation to Netskope's NewEdge network for NG-SWG, NPA, and Cloud Firewall inline inspection.
+
+**Use this if you're building:**
+- SD-WAN/networking integrations that provision tunnels programmatically
+- Automated site onboarding with primary/backup POP selection
+- Multi-vendor SASE connectivity without manual tunnel setup
+
+[Read Creating Tunnels to Netskope using REST APIs Guide →](Creating-Tunnels-to-Netskope-using-REST-APIs.md)
+
+**Key workflows:**
+- Discover the closest Netskope NewEdge POPs
+- Create, list, and delete IPsec tunnels
+- Select primary/backup POPs to avoid shared maintenance windows
+
+---
+
 ### 📡 **NAC Device Integration**
 Push Network Access Control (NAC) device posture information into Netskope via Cloud Exchange.
 
@@ -299,7 +316,7 @@ Each guide is self-contained and includes:
 
 ---
 
-**Last updated:** August 2026  
+**Last updated:** September 2026  
 **API Version:** v2 (RESTful), v2 (SCIM)
 
 ## License
