@@ -117,6 +117,25 @@ Populate destination-based blocklists and allowlists.
 
 ---
 
+### 🎯 **Destination Profiles**
+Manage the modern replacement for Custom URL Lists, with a staged create/review/deploy workflow.
+
+**Use this if you're building:**
+- Threat feed integration with safer, reviewable deployments
+- Migration off legacy Custom URL Lists
+- Incremental malware/C2 destination management
+
+[Read Destination Profiles Guide →](Destination-Profiles.md)
+
+**Key workflows:**
+- List, create, update, and delete destination profiles
+- Append/remove values incrementally
+- Stage changes with `interactive=True`, then deploy or revert
+
+**Note:** This guide's endpoint paths are placeholders — Netskope publishes exact REST paths only via Swagger inside your tenant.
+
+---
+
 ### 🚨 **DLP Incident Management**
 Monitor and respond to data loss prevention incidents.
 
@@ -316,7 +335,7 @@ Each guide is self-contained and includes:
 
 ---
 
-**Last updated:** September 2026  
+**Last updated:** November 2026  
 **API Version:** v2 (RESTful), v2 (SCIM)
 
 ## License
