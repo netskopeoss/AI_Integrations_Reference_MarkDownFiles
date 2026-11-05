@@ -129,10 +129,10 @@ Manage the modern replacement for Custom URL Lists, with a staged create/review/
 
 **Key workflows:**
 - List, create, update, and delete destination profiles
-- Append/remove values incrementally
-- Stage changes with `interactive=True`, then deploy or revert
+- Add/remove values via read-modify-write
+- Stage changes with `?interactive=true`, then deploy or revert
 
-**Note:** This guide's endpoint paths are placeholders — Netskope publishes exact REST paths only via Swagger inside your tenant.
+**Note:** Most endpoints in this guide (list, get, create, update, deploy, revert, delete) are confirmed against a live tenant. The applied-version lookup and URL List migration endpoint are not yet confirmed — see the guide for details.
 
 ---
 
