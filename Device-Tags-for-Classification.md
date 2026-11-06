@@ -258,6 +258,58 @@ curl -X GET "https://<tenant>.goskope.com/api/v2/events/datasearch/clientstatus?
 
 **Use case:** Resolve a hostname or user to the `nsdeviceuid` required by every device-tagging call below.
 
+### Endpoint DLP (`epdlp`) Health Telemetry
+
+The `clientstatus` dataset also exposes Endpoint DLP driver/service health under a nested `epdlp` object — useful for partners building device health or posture integrations (CPU/memory usage, driver and service versions, error counts, running vs. enabled state). **Confirmed live against a tenant.**
+
+Request the sub-fields individually with dot notation — requesting the bare `epdlp` field name returned an HTTP 500 error on the tenant we tested against:
+
+```bash
+curl -X GET "https://<tenant>.goskope.com/api/v2/events/datasearch/clientstatus?starttime=1773101400&endtime=1773187800&fields=device_id,hostname,epdlp.runningStatus,epdlp.enabledStatus,epdlp.criticalErrorsCount,epdlp.infoErrorsCount,epdlp.driverVersion,epdlp.serviceVersion,epdlp.cpu,epdlp.memoryInBytes,epdlp.policyConfigVersion,epdlp.timestampInUnix" \
+  -H "Authorization: Bearer <token>" \
+  -H "User-Agent: Partner-RiskAssessment-1.0"
+```
+
+**Response (confirmed shape, real values from a populated device):**
+```json
+{
+  "device_id": "C8gcDwPElrB735s4jRxi_EE1A590B-D1D7-AA2B-6A06-22700F9B3A2D",
+  "hostname": "API-Win-Client",
+  "epdlp": {
+    "cpu": 0,
+    "criticalErrorsCount": 0,
+    "driverVersion": "123.0.0.4377",
+    "enabledStatus": "Enabled",
+    "infoErrorsCount": 1417,
+    "memoryInBytes": 41893888,
+    "policyConfigVersion": "unknown",
+    "runningStatus": "Disabled",
+    "serviceVersion": "123.0.0.4378",
+    "timestampInUnix": 1742498664
+  }
+}
+```
+
+**Note:** These values are commonly empty strings on devices where Endpoint DLP isn't active for that device — that's expected, not an error. In this example, `enabledStatus: Enabled` with `runningStatus: Disabled` shows Endpoint DLP is turned on by policy but the local driver/service isn't currently running — exactly the kind of health discrepancy this field set is designed to surface.
+
+### `datasearch` vs. `dataexport` for Client Status
+
+Client status data (including the `epdlp` fields above) is available two ways. They are **not equivalent** — pick based on what you need.
+
+| | `datasearch` (ad-hoc query) | `dataexport` Client Status Iterator |
+|---|---|---|
+| **Endpoint** | `GET /api/v2/events/datasearch/clientstatus` | Create: `POST /api/v2/events/dataexport/iterator/{index}?eventtype=clientstatus`<br>Fetch: `GET /api/v2/events/dataexport/iterator/{index}/events?operation=next` |
+| **Response format** | JSON | CSV |
+| **Query model** | Ad-hoc — filter by any time range, any device, any field | Streaming/sequential — consume from a tracked index, oldest-to-newest |
+| **Includes `epdlp` (Endpoint DLP health) fields** | ✅ Yes — confirmed live | ❌ No — confirmed absent from the schema (tested at schema version v32) |
+| **History available** | Arbitrary historical window via `starttime`/`endtime` | Only the last **7 days** — older events are dropped if not consumed in time |
+| **Concurrency** | Any number of independent queries | **One iterator per tenant, per event type** — creating a second fails with `"Only one iterator is allowed per event type"` until the existing one is deleted |
+| **Best for** | One-off lookups / enrichment at investigation time (e.g., "get this device's current state right now") | Continuous bulk ingestion into a SIEM or data lake |
+
+**Doc correction (confirmed live):** Netskope's public documentation lists the iterator path as `/api/v2/dataexport/iterator/...`, which 404s. The working path is `/api/v2/events/dataexport/iterator/...`, nested under `events` like every other dataexport endpoint in this repo.
+
+**Bottom line:** If you need Endpoint DLP health telemetry, use `datasearch` — it's the only one of the two that returns it.
+
 ---
 
 ## 5. Create a Device Tag
@@ -463,6 +515,12 @@ Enforcement then depends on a Real-Time Policy (configured in the UI) matching o
 **Problem:** Comma-separated device UID request rejected
 - **Solution:** Unlike tags and user keys, `nsdeviceuid` does not support comma-separated batching in a single object — submit one device object per entry in the `devices` array instead.
 
+**Problem:** Querying `clientstatus` with `fields=...,epdlp` returns an HTTP 500 error
+- **Solution:** Request the `epdlp` sub-fields individually with dot notation (`epdlp.cpu`, `epdlp.runningStatus`, etc.) instead of the bare parent field name.
+
+**Problem:** `epdlp` fields are missing when pulling client status via the dataexport iterator
+- **Solution:** Expected — the dataexport Client Status Iterator schema does not include `epdlp` fields. Use `datasearch` (workflow 4) for Endpoint DLP health telemetry.
+
 ---
 
 ## API Reference
@@ -472,10 +530,11 @@ Enforcement then depends on a Real-Time Policy (configured in the UI) matching o
 | 1 | `/api/v2/deviceclassification/tags` | GET | View existing classification tags |
 | 2 | `/api/v2/deviceclassification/tags` | POST | Create a classification tag |
 | 3 | `/api/v2/deviceclassification/rules` | POST | Create a classification rule |
-| 4 | `/api/v2/events/datasearch/clientstatus` | GET | Find devices / get nsdeviceuid |
+| 4 | `/api/v2/events/datasearch/clientstatus` | GET | Find devices / get nsdeviceuid; also the only source of `epdlp` health fields |
 | 5 | `/api/v2/devices/device/tags` | POST | Create a device tag |
 | 6 | `/api/v2/devices/device/tags/gettags` | POST | Find existing device tags |
 | 7 | `/api/v2/devices/device/tags/bulkreplace` | POST | Apply tags to devices |
+| — | `/api/v2/events/dataexport/iterator/{index}` (create/check), `.../events` (fetch) | POST / GET | Bulk/streaming client status export (CSV) — does **not** include `epdlp` fields |
 
 **Note:** The Device Classification API is currently in **beta** — contact your Netskope account team for access.
 
