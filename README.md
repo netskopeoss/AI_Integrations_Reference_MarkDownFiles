@@ -205,6 +205,23 @@ Programmatically manage device tags and classification rules to drive real-time 
 
 ---
 
+### 📊 **Client Status: datasearch vs. dataexport**
+Query or stream Netskope Client status, including Endpoint DLP (`epdlp`) health telemetry.
+
+**Use this if you're building:**
+- Endpoint DLP health monitoring (CPU/memory, driver/service version, error counts)
+- Device status lookups at investigation time
+- A continuous client status export pipeline into a SIEM or data lake
+
+[Read Client Status: datasearch vs. dataexport Guide →](Client-Status-Datasearch-vs-Dataexport.md)
+
+**Key workflows:**
+- Query client status and Endpoint DLP health fields via `datasearch`
+- Set up the dataexport Client Status Iterator for bulk/streaming export
+- Choose the right API — `epdlp` fields are only available via `datasearch`
+
+---
+
 ### 🌐 **Creating Tunnels to Netskope using REST APIs**
 Automate IPsec/GRE tunnel creation to Netskope's NewEdge network for NG-SWG, NPA, and Cloud Firewall inline inspection.
 
